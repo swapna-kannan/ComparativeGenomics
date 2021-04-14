@@ -9,13 +9,6 @@ git checkout <branch_name>
 #this next command somehow makes the branch visible on the online repo
 git push --set-upstream origin <branch_name>
 
-#create a test_file with some text to test if the file can be uploaded on to the branch
-git add <test_file>
-
-#add file to the branch
-git commit -m <message>
-
-
 #after all of this is setup, here's how to update the files on your branch:
 
 git add <file_that_has_been_editied or new_file>
