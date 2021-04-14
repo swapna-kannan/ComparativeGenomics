@@ -6,7 +6,7 @@ git branch <branch_name>
 #to change into the newly created branch do:
 git checkout <branch_name>
 
-#this next command somehow makes the branch visible on the online repo
+#this next command somehow makes the branch visible on the online repo and only needs to be run once
 git push --set-upstream origin <branch_name>
 
 #after all of this is setup, here's how to update the files on your branch:
