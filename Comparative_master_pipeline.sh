@@ -1,13 +1,13 @@
 #!/bin/bash
 #Usage that the user is going to see
-print_help() {echo "
+print_help() { echo "
 USAGE
         #need to add the final usage of the pipeline here
 
 DESCRIPTION
 This is a script to install and run a pipeline for Comparative Genomics Analysis.
 There are multiple tools that you can choose from and run. The script takes ineither FASTA files or raw reads,from Illumina samples
-(#should we include this here or not? 
+(#should we include this here or not?
 I think we should remove this. I think reads from most platforms will work -Nikesh ),
 for input and you can run it through tools such as ANI, MLST, SNP Analysis, VFDB, PlasmidFinder.
 
@@ -39,25 +39,25 @@ OPTIONS
 "
 }
 #our GETOPTS BLOCK
-outputDir = ""
-toolsDir = ""
-ref_genome = false
-pyANI = false
-ANIb = false
-ANIm = false
-stringMLST = false
-kSNP3 = false
-PlasmidFinder = false
-parSNP = false
-virulence = false
-resistance = false
+outputDir=""
+toolsDir=""
+ref_genome=false
+pyANI=false
+ANIb=false
+ANIm=false
+stringMLST=false
+kSNP3=false
+PlasmidFinder=false
+parSNP=false
+virulence=false
+resistance=false
 while getopts "hiIro:t:AbmMKpPVR" option
 do
         case $option in
                 h)print_help exit;;
                 i)assembled_input=$OPTARG;;
                 I)raw_input=$OPTARG;;
-                r)ref_genome=$OPTARG;; 
+                r)ref_genome=$OPTARG;;
                 o)outputDir=$($OPTARG);;
                 t)toolsDir=$($OPTARG);;
                 A)pyANI=true;;
@@ -67,44 +67,48 @@ do
                 K)kSNP=true;;
                 p)parSNP=true;;
                 P)PlasmidFinder=true;;
-                V)virulence=true;; 
+                V)virulence=true;;
                 R)resistance=true;;
                 *) echo "UNKNOWN OPTION $OPTARG PROVIDED" exit;;
         esac
 done
 
-# NEED TO PUT IN PYANI AND ADD CONDA ENVIRONMENT
+mkdir -p CompGen/tools Compgen/output
 
-# running aniB 
-if $ANIb=true; then
-	
-	#download tools 
+#NEED TO PUT IN PYANI AND ADD CONDA ENVIRONMENT
+
+# running aniB
+if $ANIb; then
+
+	#download tools
 	conda install pyani
 	conda install mummer blast legacy-blast -y
-	
+
 	# run the ANIb command 
 	echo "Calculating average nucleotide identity using ANIb..."
 	average_nucleotide_identity.py -i $assembled_input -o $outputDir -m ANIb -g -f -v
-fi 
+fi
 
-#running aniM 
-if $ANIm=true; then
-	
+#running aniM
+if $ANIm; then
+
 	#download tools
         conda install pyani
         conda install mummer blast legacy-blast -y
 
-	# run the ANIm command 
+	#run the ANIm command
 	echo "Calculating average nucleotide identity using ANIm..."
 	average_nucleotide_identity.py -i $assembled_input -o $outputDir -m ANIm -g -f -v
-fi 
+fi
 
-#running MLST 
-if $stringMLST=true; then 
-	
+#running MLST
+if $stringMLST; then
+
+	mkdir -p CompGen/tools/stringMLST Compgen/tools/stringMLST/extra CompGen/output/stringMLST
+
 	# Install stringMLST
 	echo "Installing stringMLST and its dependencies"
-	conda install -c bioconda stringmlst 
+	conda install -c bioconda stringmlst
 
 	#Install GrapeTree
 	echo "Installing GrapeTree and its dependencies"
@@ -118,36 +122,36 @@ if $stringMLST=true; then
 	stringMLST.py --buildDB --config datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
 
 	echo "running sequence typing for paired end reads..."
-	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $outputDir
-
+	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $outputDir #<-- needs to be updated
+	mv ./CompGen/tools/stringMLST/CJ* ./CompGen/tools/stringMLST/extra/
 	echo "Done!"
 
 	# run GrapeTree to generate newick file for cluster visualization
 	echo "generating Newick file from allele profile"
-	grapetree -p <mlst_output_name> -m "MSTreeV2" > <mlst_output_name.newick>#<-- this needs to be updated... I'll talk about this more with yall tomorrow regarding output names and pathing
-fi 
+	grapetree -p <mlst_output_name> -m "MSTreeV2" > <mlst_output_name.newick> #<-- this needs to be updated... I'll talk about this more with yall tomorrow regarding output names and pathing
+fi
 
-#running parsnp 
-if $parsnp=true; then 
+#running parsnp
+if $parsnp; then
 
-	#download tools 
+	#download tools
 	conda install -c bioconda parsnp
 
-	#check if reference exists 
+	#check if reference exists
 	if [ ! -f $ref_genome ]; then
         	echo "Reference does not exist"
         	exit
 	fi
-	
+
 	# check if input files exist
 	if [ ! -f $assembled_input ]; then
         	echo "Assemblies do not exist"
         exit
-	fi 
-	
+	fi
+
 	#run parsnp 
 	$(parsnp -r $ref_genome -d $assembled_input)
-fi 
+fi
 
 
 
@@ -155,16 +159,16 @@ fi
 
 
 
-# running virulence 
-if $virulence=true; then 
-	
+# running virulence
+if $virulence; then
+
 	# create a virtual env with python 2 to run srst2
 	conda create -y --name temp_py2 python=2.7
 	eval "$(conda shell.bash hook)"
 	source ./anaconda3/bin/activate temp_py2
 	conda activate temp_py2
 
-	#download conda tools 
+	#download conda tools
 	conda install -y biopython
 	conda install -y -c bioconda srst2
 	conda install -y -c bioconda cd-hit
@@ -179,15 +183,15 @@ if $virulence=true; then
 	conda deactivate
 	conda env remove -n temp_py2
 
-	# make the blast database 
+	# make the blast database
 	makeblastdb -in Campylobacter_VF_clustered.fasta -dbtype 'nucl' -out Campylobacter_database
 
-	# run blast on all the files and put results in output folder 
+	# run blast on all the files and put results in output folder
 	for file in $(ls $assembled_input); do
         	blastn -db Campylobacter_database -query $assembled_input/$file -perc_identity .98 -out $outputDir/$file -outfmt "6 stitle"
 	done
 
-	#remove any old files if they exist 
+	#remove any old files if they exist
 	rm -f VF_all.txt
 	rm -f VF_unique.txt
 	rm -f VF_table.txt
@@ -206,7 +210,7 @@ if $virulence=true; then
 
 	echo "$long_line" > VF_table.txt
 
-	# check if gene is in each file and add info to VF_table.txt 
+	# check if gene is in each file and add info to VF_table.txt
 	for file in $(ls $outputDir); do
         	data="$file     "
         	for line in $(cat VF_unique.txt); do
@@ -224,12 +228,12 @@ if $virulence=true; then
 	rm Campylobacter*
 	rm VF_all.txt
 	rm VF_unique.txt
-fi 
+fi
 
 
-#running resistance 
-if $resistance=true; then 
-	# remove any old files if they exist 
+#running resistance
+if $resistance; then
+	# remove any old files if they exist
 	rm -f res_all.txt
 	rm -f res_unique.txt
 	rm -f res_table.txt
@@ -253,7 +257,7 @@ if $resistance=true; then
 
 	echo "$long_line" > res_table.txt
 
-	# check if gene is in each file and add info to VF_table.txt 
+	# check if gene is in each file and add info to VF_table.txt
 	for file in $(ls ./merged_gff/*gff); do
         	data="$file     "
         	for line in $(cat res_unique.txt); do
@@ -271,4 +275,4 @@ if $resistance=true; then
 
 	mv res_table.txt $outputDir
 
-#NEED TO ADD PLASMID FINDER 
+#NEED TO ADD PLASMID FINDER
