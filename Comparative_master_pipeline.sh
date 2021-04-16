@@ -1,10 +1,15 @@
-sage that the user is going to see
+#!/bin/bash
+#Usage that the user is going to see
 print_help() {echo "
 USAGE
         #need to add the final usage of the pipeline here
 
 DESCRIPTION
-This is a script to install and run a pipeline for Comparative Genomics Analysis. There are multiple tools that you can choose from and run. The script takes ineither FASTA files or raw reads,from Illumina samples(#should we include this here or not?), for input and you can run it through tools such as ANI, MLST, SNP Analysis, VFDB, PlasmidFinder.
+This is a script to install and run a pipeline for Comparative Genomics Analysis.
+There are multiple tools that you can choose from and run. The script takes ineither FASTA files or raw reads,from Illumina samples
+(#should we include this here or not? 
+I think we should remove this. I think reads from most platforms will work -Nikesh ),
+for input and you can run it through tools such as ANI, MLST, SNP Analysis, VFDB, PlasmidFinder.
 
 PREREQUISTITES:
         git
@@ -21,7 +26,7 @@ OPTIONS
         -o      Output directory for the files.
         -t      Folder where you want the tools to be downloaded.
         -I      PATH for input of raw reads. This is used for stringMLST.
-	-r	.fasta file for the reference genome
+        -r      fasta file for the reference genome
         -A      run pyANI
         -b      run pyANI with ANIb
         -m      run pyANI with ANIm
@@ -29,8 +34,8 @@ OPTIONS
         -K      run kSNP3
         -p      run parSNP
         -P      run PlasmidFinder
-	-V	run SRST2 and BLAST
-	-R	Find resistance genes 
+        -V      run SRST2 and BLAST
+        -R      Find resistance genes
 "
 }
 #our GETOPTS BLOCK
@@ -52,7 +57,7 @@ do
                 h)print_help exit;;
                 i)assembled_input=$OPTARG;;
                 I)raw_input=$OPTARG;;
-		r)ref_genome=$OPTARG;; 
+                r)ref_genome=$OPTARG;; 
                 o)outputDir=$($OPTARG);;
                 t)toolsDir=$($OPTARG);;
                 A)pyANI=true;;
@@ -63,12 +68,12 @@ do
                 p)parSNP=true;;
                 P)PlasmidFinder=true;;
                 V)virulence=true;; 
-		R)resistance=true;;
- 		*) echo "UNKNOWN OPTION $OPTARG PROVIDED" exit;;
+                R)resistance=true;;
+                *) echo "UNKNOWN OPTION $OPTARG PROVIDED" exit;;
         esac
 done
 
-# NEED TO PUT IN PYANI AND ADD CONDA ENVIRONMENT 
+# NEED TO PUT IN PYANI AND ADD CONDA ENVIRONMENT
 
 # running aniB 
 if $ANIb=true; then
@@ -97,11 +102,15 @@ fi
 #running MLST 
 if $stringMLST=true; then 
 	
-	# download tools
+	# Install stringMLST
 	echo "Installing stringMLST and its dependencies"
 	conda install -c bioconda stringmlst 
 
-	# run stringMLST	
+	#Install GrapeTree
+	echo "Installing GrapeTree and its dependencies"
+	pip install grapetree
+
+	# run stringMLST
 	echo"downloading database for $species from pubMLST..."
 	stringMLST.py --getMLST -P datasets/ --species "Campylobacter jejuni"
 
@@ -112,6 +121,10 @@ if $stringMLST=true; then
 	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $outputDir
 
 	echo "Done!"
+
+	# run GrapeTree to generate newick file for cluster visualization
+	echo "generating Newick file from allele profile"
+	grapetree -p <mlst_output_name> -m "MSTreeV2" > <mlst_output_name.newick>#<-- this needs to be updated... I'll talk about this more with yall tomorrow regarding output names and pathing
 fi 
 
 #running parsnp 
