@@ -60,7 +60,6 @@ do
                 r)ref_genome=$OPTARG;;
                 o)outputDir=$($OPTARG);;
                 t)toolsDir=$($OPTARG);;
-                A)pyANI=true;;
                 b)ANIb=true;;
                 m)ANIm=true;;
                 M)stringMLST=true;;
@@ -75,10 +74,15 @@ done
 
 mkdir -p CompGen/tools Compgen/output
 
-#NEED TO PUT IN PYANI AND ADD CONDA ENVIRONMENT
+#NEED ADD CONDA ENVIRONMENT
 
 # running aniB
 if $ANIb; then
+
+	#ADD CHECK FOR ASSEMBLED READ INPUT 
+
+	#make tools and output directory for ANIb
+	mkdir -p CompGen/tools/ANIb CompGen/tools/ANIb/extra CompGen/output/ANIb  
 
 	#download tools
 	conda install pyani
@@ -86,11 +90,21 @@ if $ANIb; then
 
 	# run the ANIb command 
 	echo "Calculating average nucleotide identity using ANIb..."
-	average_nucleotide_identity.py -i $assembled_input -o $outputDir -m ANIb -g -f -v
+	average_nucleotide_identity.py -i $assembled_input -o CompGen/output/aniB -m ANIb -g -f -v 
+
+	#MOVE FILES TO APPROPRIATE FOLDER
 fi
 
 #running aniM
 if $ANIm; then
+
+	#ADD CHECK FOR ASSEMBLED READ INPUT 
+	
+	#make tools and output directory for ANIm
+        mkdir -p CompGen/tools/ANIm CompGen/tools/ANIm/extra Compgen/output/ANIm
+
+        #move to ANIm tools folder so any junk files get outputted there 
+        cd CompGen/tools/ANIm
 
 	#download tools
         conda install pyani
@@ -98,11 +112,13 @@ if $ANIm; then
 
 	#run the ANIm command
 	echo "Calculating average nucleotide identity using ANIm..."
-	average_nucleotide_identity.py -i $assembled_input -o $outputDir -m ANIm -g -f -v
+	average_nucleotide_identity.py -i $assembled_input -o ../../output/ANIm -m ANIm -g -f -v
 fi
 
 #running MLST
 if $stringMLST; then
+
+	#ADD CHECK FOR RAW READ INPUT 
 
 	mkdir -p CompGen/tools/stringMLST Compgen/tools/stringMLST/extra CompGen/output/stringMLST
 
@@ -128,14 +144,20 @@ if $stringMLST; then
 
 	# run GrapeTree to generate newick file for cluster visualization
 	echo "generating Newick file from allele profile"
-	grapetree -p <mlst_output_name> -m "MSTreeV2" > <mlst_output_name.newick> #<-- this needs to be updated... I'll talk about this more with yall tomorrow regarding output names and pathing
+	#grapetree -p <mlst_output_name> -m "MSTreeV2" > <mlst_output_name.newick> #<-- this needs to be updated... I'll talk about this more with yall tomorrow regarding output names and pathing
 fi
 
 #running parsnp
-if $parsnp; then
+if $parSNP; then
+
+	#make tools and output directory for parsnp
+        mkdir -p CompGen/tools/parsnp CompGen/tools/parsnp/extra Compgen/output/parsnp
+
+        #move to parsnp tools folder so any junk files get outputted there 
+        cd CompGen/tools/parsnp 
 
 	#download tools
-	conda install -c bioconda parsnp
+	conda install -y -c bioconda parsnp
 
 	#check if reference exists
 	if [ ! -f $ref_genome ]; then
@@ -151,6 +173,8 @@ if $parsnp; then
 
 	#run parsnp 
 	$(parsnp -r $ref_genome -d $assembled_input)
+
+	#FIND OUTPUT FILE NAME AND MOVE TO OUTPUT FOLDER 
 fi
 
 
@@ -165,7 +189,7 @@ if $virulence; then
 	# create a virtual env with python 2 to run srst2
 	conda create -y --name temp_py2 python=2.7
 	eval "$(conda shell.bash hook)"
-	source ./anaconda3/bin/activate temp_py2
+	source ./anaconda3/bin/activate temp_py2 #need to check path to conda 
 	conda activate temp_py2
 
 	#download conda tools
@@ -174,8 +198,8 @@ if $virulence; then
 	conda install -y -c bioconda cd-hit
 
 	# generate the reference files for genus
-	python ./tools/srst2/database_clustering/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter
-	cd-hit -i Campylobacter.fsa -o Campylobacter_cdhit90 -c 0.90 > Campylobacter_cdhit90.stdout
+	python ./tools/srst2/database_clustering/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
+	cd-hit -i Campylobacter.fsa -o Campylobacter_cdhit90 -c 0.90 > Campylobacter_cdhit90.stdout 
 	python ./tools/srst2/database_clustering/VFDB_cdhit_to_csv.py --cluster_file Campylobacter_cdhit90.clstr --infile Campylobacter.fsa --outfile Campylobacter_cdhit90.csv
 	python ./tools/srst2/database_clustering/csv_to_gene_db.py -t Campylobacter_cdhit90.csv -o Campylobacter_VF_clustered.fasta -s 5
 
@@ -274,5 +298,5 @@ if $resistance; then
 	rm res_unique.txt
 
 	mv res_table.txt $outputDir
-
+fi 
 #NEED TO ADD PLASMID FINDER
