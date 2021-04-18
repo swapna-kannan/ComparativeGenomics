@@ -6,14 +6,13 @@ USAGE
 
 DESCRIPTION
 This is a script to install and run a pipeline for Comparative Genomics Analysis.
-There are multiple tools that you can choose from and run. The script takes ineither FASTA files or raw reads,from Illumina samples
-(#should we include this here or not?
-I think we should remove this. I think reads from most platforms will work -Nikesh ),
+There are multiple tools that you can choose from and run. The script takes in either FASTA files or raw reads,
 for input and you can run it through tools such as ANI, MLST, SNP Analysis, VFDB, PlasmidFinder.
 
 PREREQUISTITES:
         git
         conda
+        tools folder with SRST2
         #ADD MORE
 
 TOOLS INSTALLED/INVOKED:
@@ -25,6 +24,7 @@ OPTIONS
         -i      PATH for input of  assembled .fasta files.
         -o      Output name for the files.
         -I      PATH for input of raw reads. This is used for stringMLST.
+	-g	PATH for annotated gff files. This is used for resistance. 
 	-N 	To install any of the tools 
         -r      fasta file for the reference genome
         -b      run pyANI with ANIb
@@ -36,109 +36,135 @@ OPTIONS
         -R      Find resistance genes
 "
 }
+
 #our GETOPTS BLOCK
-outputDir=""
-toolsDir=""
+assembled_input=false
+raw_input=false 
 ref_genome=false
+gff_files=false
 ANIb=false
 ANIm=false
 stringMLST=false
-kSNP3=false
 PlasmidFinder=false
 parSNP=false
 virulence=false
 resistance=false
-install=false
-while getopts "hiIro:bmMpPVRN" option
-do
-        case $option in
-                h)print_help exit;;
-                i)assembled_input=$OPTARG;;
-                I)raw_input=$OPTARG;;
-                r)ref_genome=$OPTARG;;
-                o)output=$($OPTARG);;
-                b)ANIb=true;;
-                m)ANIm=true;;
-                M)stringMLST=true;;
-                p)parSNP=true;;
-                P)PlasmidFinder=true;;
-                V)virulence=true;;
-                R)resistance=true;;
-		N)install=true;;
-                *) echo "UNKNOWN OPTION $OPTARG PROVIDED" exit;;
-        esac
+tools=false
+
+while getopts "hi:I:r:g:o:bmMpPVRt" option; do
+	case "$option" in
+		h)print_help exit;;
+		i)assembled_input=$OPTARG;;
+		I)raw_input=$OPTARG;;
+		r)ref_genome=$OPTARG;;
+		g)gff_files=$OPTARG;; 
+		o)output=$OPTARG;;
+		b)ANIb=true;;
+		m)ANIm=true;;
+		M)stringMLST=true;;
+		p)parSNP=true;;
+		P)PlasmidFinder=true;;
+		V)virulence=true;;
+		R)resistance=true;;
+		t)tools=true;;
+		*)echo "UNKNOWN OPTION $OPTARG PROVIDED" exit;; #isn't echoing the option provided 
+	esac
 done
 
-mkdir -p CompGen/tools Compgen/output
-
-#NEED ADD CONDA ENVIRONMENT
-
+# make general CompGen directory with tools and outputs 
+mkdir -p CompGen/tools CompGen/output
 
 # running aniB
 if $ANIb; then
+	
+	#check if input files exist
+	if [[ -f $assembled_input ]]
+	then 
+		echo "Assemblies do not exist"
+		exit
+	fi
 
-	#ADD CHECK FOR ASSEMBLED READ INPUT 
-
-	#make tools and output directory for ANIb
+	#make tools and output directory for ANIm
 	mkdir -p CompGen/tools/ANIb CompGen/tools/ANIb/extra CompGen/output/ANIb
-	cd CompGen/tools/ANIb
+	
+	conda create --name pyani_env python=3.8 -y
+	eval "$(conda shell.bash hook)"
+	source ./anaconda3/bin/activate pyani_env
+	conda activate pyani_env
+		
+	#download tools
+	if $tools; then
+		echo "Installing pyani..." 
+		conda install -y biopython
+		conda install -y -c bioconda pyani
+		conda install -y -c bioconda blast-legacy
+		#conda install -c bioconda mummer blast legacy-blast -y
+		conda install -y -c bioconda/label/cf201901 blast-legacy
+		conda install -y -c biocore blast-legacy
+	fi 
+	
 
-	if $install; then
-		echo "Installing  pyANI..."
-		#downloading the tools 
-		conda install pyani 
-		conda install mummer blast legacy-blast -y
-	fi   
+	#run the ANIm command
+	echo "Calculating average nucleotide identity using ANIm..."
+	average_nucleotide_identity.py -o CompGen/output/ANIb/$output -i $assembled_input -m ANIb -g -f -v
+	
+	# deactivate pyani_env 
+	conda deactivate
+	conda env remove -n pyani_env
 
-	# run the ANIb command 
-	echo "Calculating average nucleotide identity using ANIb..."
-	average_nucleotide_identity.py -i $assembled_input -o CompGen/output/aniB/${output} -m ANIb -g -f -v 
-	#move files into specific folder 
-	mv ${output}ANIb_alignment_coverage.* CompGen/output/ANIb
-	mv ${output}ANIb_alignment_length.* CompGen/output/ANIb
-	mv ${output}ANIb_hadamard.* CompGen/output/ANIb
-	mv ${output}ANIb_percentage_identity.* CompGen/output/ANIb
-	mv ${output}ANIb_similarity_errors.* CompGen/output/ANIb
 fi
 
 #running aniM
 if $ANIm; then
 
-	#ADD CHECK FOR ASSEMBLED READ INPUT 
-	
-	#make tools and output directory for ANIm
-        mkdir -p CompGen/tools/ANIm CompGen/tools/ANIm/extra Compgen/output/ANIm
-	cd CompGen/tools/ANIm
+	#check if input files exist
+	if [[ -f $assembled_input ]]
+	then 
+		echo "Assemblies do not exist"
+		exit
+	fi
 
-        #move to ANIm tools folder so any junk files get outputted there 
-        cd CompGen/tools/ANIm
+	#make tools and output directory for ANIm
+	mkdir -p CompGen/tools/ANIm CompGen/tools/ANIm/extra CompGen/output/ANIm
 	
+	conda create --name pyani_env python=3.8 -y
+	eval "$(conda shell.bash hook)"
+	source ./anaconda3/bin/activate pyani_env
+	conda activate pyani_env
+		
 	#download tools
-	if $install; then
+	if $tools; then
 		echo "Installing pyani..." 
-        	conda install pyani
-        	conda install mummer blast legacy-blast -y
+		conda install -y biopython
+		conda install -y -c bioconda pyani
+		conda install -y -c bioconda blast-legacy
+		#conda install -c bioconda mummer blast legacy-blast -y
+		conda install -y -c bioconda/label/cf201901 blast-legacy
+		conda install -y -c biocore blast-legacy
+	fi 
+	
 
 	#run the ANIm command
 	echo "Calculating average nucleotide identity using ANIm..."
-	average_nucleotide_identity.py -i $assembled_input -o ../../output/ANIm/$output -m ANIm -g -f -v
+	average_nucleotide_identity.py -o CompGen/output/ANIm/$output -i $assembled_input -m ANIm -g -f -v
 	
-	#moving the files into the appropriate directories
-	#I JUST REALIZED WE DONT NEED TO DO THIS...FAIL 
-	mv ${output}ANIm_alignment_coverage.* CompGen/output/ANIm
-	mv ${output}ANIm_alignmnet_length.* CompGen/output/ANIm
-	mv ${output}ANIm_hadamard.* CompGen/output/ANIm
-	mv ${output}ANIm_percentage_identity.* CompGen/output/ANIm
-	mv ${output}ANIm_similarity_errors.* CompGen/output/ANIm
+	# deactivate pyani_env 
+	conda deactivate
+	conda env remove -n pyani_env
 
 fi
 
 #running MLST
 if $stringMLST; then
 
-	#ADD CHECK FOR RAW READ INPUT 
+	#check if input files exist
+	if [[ -f $raw_reads ]]
+	then 
+		echo "Raw reads do not exist"
+		exit
+	fi
 
-	mkdir -p CompGen/tools/stringMLST Compgen/tools/stringMLST/extra CompGen/output/stringMLST
+	mkdir -p CompGen/tools/stringMLST CompGen/tools/stringMLST/extra CompGen/output/stringMLST
 	cd CompGen/tools/stringMLST
 
 	# Install stringMLST
@@ -171,11 +197,23 @@ fi
 #running parsnp
 if $parSNP; then
 
-	#make tools and output directory for parsnp
-        mkdir -p CompGen/tools/parsnp CompGen/tools/parsnp/extra Compgen/output/parsnp
+	#check if reference exists
+	if [[ -f $ref_genome ]]
+	then 
+		echo "reference genome do not exist"
+		exit
+	fi
+     
+     	# check if input is correct 
+     	if [[ -f $assembled_input ]]
+	then 
+		echo "Assemblies do not exist"
+		exit
+	fi
 
-        #move to parsnp tools folder so any junk files get outputted there 
-        cd CompGen/tools/parsnp
+
+	#make tools and output directory for parsnp
+	mkdir -p CompGen/tools/parsnp CompGen/tools/parsnp/extra CompGen/output/parsnp
 
 	#download tools
 	if $install; then 
@@ -183,20 +221,8 @@ if $parSNP; then
 		conda install -y -c bioconda parsnp
 	fi 
 
-	#check if reference exists
-	if [ ! -f $ref_genome ]; then
-        	echo "Reference does not exist"
-        	exit
-	fi
-
-	# check if input files exist
-	if [ ! -f $assembled_input ]; then
-        	echo "Assemblies do not exist"
-        exit
-	fi
-
-	#run parsnp WHY IS THIS IN $?
-	$(parsnp -r $ref_genome -d $assembled_input -o CompGen/parsnp/$output)
+	#run parsnp
+	parsnp -r $assembled_input/$ref_genome -d $assembled_input -o CompGen/output/parsnp/$output
 
 	#FIND OUTPUT FILE NAME AND MOVE TO OUTPUT FOLDER 
 fi
@@ -205,21 +231,33 @@ fi
 
 # running virulence
 if $virulence; then
+	
+	# check if input is correct 
+	if [[ -f $assembled_input ]]
+	then
+		echo "Assemblies do not exist"
+		exit
+	fi
+
 	#make tools and output directory for virulence 
-	mkdir -p CompGen/tools/virulence CompGen/tools/virulenece/extra CompGen/output/virulence
-	cd CompGen/tools/virulence 
+	mkdir -p CompGen/tools/virulence CompGen/tools/virulence/extra CompGen/output/virulence
+
 	# create a virtual env with python 2 to run srst2
 	conda create -y --name temp_py2 python=2.7
 	eval "$(conda shell.bash hook)"
 	source ./anaconda3/bin/activate temp_py2 #need to check path to conda 
 	conda activate temp_py2
-	if $install; then 
-		echo "Installing virulence #WHAT IS THE TOOL SPECIFICALLY CALLED"
-		#download conda tools
-		conda install -y biopython
-		conda install -y -c bioconda srst2
-		conda install -y -c bioconda cd-hit
-	fi
+	
+	#virulence needs the tools installed everytime bc it's making a new environment
+	echo "Installing biopython"
+	conda install -y biopython
+	echo "Installing srst2"
+	conda install -y -c bioconda srst2
+	echo "Installing cd-hit" 
+	conda install -y -c bioconda cd-hit
+	echo "Installing blast" 
+	conda install -c bioconda blast
+
 	# generate the reference files for genus
 	python ./tools/srst2/database_clustering/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
 	cd-hit -i Campylobacter.fsa -o Campylobacter_cdhit90 -c 0.90 > Campylobacter_cdhit90.stdout 
@@ -228,87 +266,76 @@ if $virulence; then
 
 	# deactivate and delete the virtual env
 	conda deactivate
-	conda env remove -n temp_py2
+	#conda env remove -n temp_py2
 
 	# make the blast database
-	makeblastdb -in Campylobacter_VF_clustered.fasta -dbtype 'nucl' -out Campylobacter_database
+	makeblastdb -in Campylobacter_VF_clustered.fasta -dbtype 'nucl' -out CompGen/tools/virulence/extra/Campylobacter_database
 
 	# run blast on all the files and put results in output folder
-	for file in $(ls $assembled_input); do
-        	blastn -db Campylobacter_database -query $assembled_input/$file -perc_identity .98 -out $outputDir/$file -outfmt "6 stitle"
+	for file in $assembled_input; do
+		echo $file
+		blastn -db CompGen/tools/virulence/extra/Campylobacter_database -query $assembled_input/$file -perc_identity .98 -out CompGen/tools/virulence/$file -outfmt "6 stitle"
 	done
 
-	#remove any old files if they exist
-	rm -f VF_all.txt
-	rm -f VF_unique.txt
-	rm -f VF_table.txt
 
 	# get all the gene names
-	for file in $(ls $outputDir/*.fasta); do
-        	awk '{print $3}' $file >> VF_all.txt
+	for file in $(ls CompGen/tools/virulence); do
+        	echo $file
+		awk '{print $3}' $file >> CompGen/tools/virulence/extra/VF_all_$output.txt
 	done
 
 	# get unique genes and add them as columns in a new file
-	sort VF_all.txt | uniq >> VF_unique.txt
+	sort CompGen/tools/virulence/extra/VF_all_$output.txt | uniq >> CompGen/tools/virulence/extra/VF_unique_$output.txt
 	long_line=""
-	for line in $(cat VF_unique.txt); do
+	for line in $(cat CompGen/tools/virulence/extra/VF_unique_$output.txt); do
         	long_line+="    $line"
 	done
 
-	echo "$long_line" > VF_table.txt
+	echo "$long_line" > CompGen/tools/virulence/VF_table_$output.txt
 
 	# check if gene is in each file and add info to VF_table.txt
-	for file in $(ls $outputDir); do
+	for file in $(ls CompGen/tools/virulence); do
         	data="$file     "
-        	for line in $(cat VF_unique.txt); do
-                	if grep -q $line $assembled_input/$file; then
+        	for line in $(cat CompGen/tools/virulence/extra/VF_unique_$output.txt); do
+                	if grep -q $line CompGen/tools/virulence/$file; then
                         	data+="X        "
                		else
                         	data+=" "
                 	fi
         	done
-        	echo "$data" >> VF_table.txt
+        	echo "$data" >> CompGen/output/virulence/VF_table_$output.txt
 	done
-
-	mv VF_table.txt $outputDir
-
-	rm Campylobacter*
-	rm VF_all.txt
-	rm VF_unique.txt
 fi
 
 
 #running resistance
 if $resistance; then
-	#making the directories
-	#DO WE NEED TO DO THIS?
-	mkdir -p CompGen/output/Deeparg
-	# remove any old files if they exist
-	rm -f res_all.txt
-	rm -f res_unique.txt
-	rm -f res_table.txt
+	
+	#make the output directory 
+	mkdir -p CompGen/output/Deeparg CompGen/tools/Deeparg
+	
 
 	# get all the gene names
-	for file in $(ls ./merged_gff/*gff); do=
-        	grep DeepARG $file  | awk '{print $9}' | sed 's/|/,/g' >> res_temp.txt
+	for file in $gff_files; do
+        	grep DeepARG $file  | awk '{print $9}' | sed 's/|/,/g' >> CompGen/tools/Deeparg/res_temp_$output.txt
 	done
 
-	for line in $(cat res_temp.txt); do
+	for line in $(cat CompGen/tools/Deeparg/res_temp_$output.txt); do
         	readarray -d , -t strarr <<< "$line"
-        	echo ${strarr[2]} >> res_all.txt
+        	echo ${strarr[2]} >> CompGen/tools/Deeparg/res_all_$output.txt
 	done 
 
 	# get unique genes and add them as columns in a new file
-	sort res_all.txt | uniq >> res_unique.txt
+	sort CompGen/tools/Deeparg/res_all_$output.txt | uniq >> CompGen/tools/Deeparg/res_unique_$output.txt
 	long_line=""
-	for line in $(cat res_unique.txt); do
+	for line in $(cat CompGen/tools/Deeparg/res_unique_$output.txt); do
         	long_line+="    $line"
 	done
 
-	echo "$long_line" > res_table.txt
+	echo "$long_line" > CompGen/output/Deeparg/res_table_$output.txt
 
 	# check if gene is in each file and add info to VF_table.txt
-	for file in $(ls ./merged_gff/*gff); do
+	for file in $gff_files; do
         	data="$file     "
         	for line in $(cat res_unique.txt); do
                 	if grep -q $line $file; then
@@ -317,28 +344,44 @@ if $resistance; then
                         	data+=" "
                 	fi
         	done
-        echo "$data" >> res_table.txt
+        echo "$data" >> CompGen/output/Deeparg/res_table_$output.txt
 	done
 
-	rm res_all.txt
-	rm res_unique.txt
-
-	mv res_table.txt $outputDir
 fi 
 
 #running PlasmidFinder
-
-if $PlasmidFinder
-then
+if $PlasmidFinder; then
+	
+	# check if input is correct 
+	if [[ -f $assembled_input ]]
+	then
+		echo "Assemblies do not exist"
+		exit
+	fi
+	
 	#making the directories 
 	mkdir -p CompGen/tools CompGen/tools/PlasmidFinder/extra CompGen/output/PlasmidFinder
 	cd CompGen/PlasmidFinder/tools
+	
 	#installing PlasmidFinder 
-	if $install
-	then 
+	if $install; then 
 		echo "Installing Plasmidfinder"
-		conda install -c bioconda plasmidfinder 
+		conda install -c -y bioconda plasmidfinder 
+		download-db.sh
 	fi  
-	echo "Running Plasmidfinder"
-	plasmidfinder.py -i $assembled_input > CompGen/output/PlasmidFinder
-fi
+	
+	echo "Running plasmidfinder"  
+    	for file in $(ls $assembled_input);  
+    	do 
+    		echo "$file"
+    		v=$(echo $file | cut -d "." -f 1)
+    		v1="${output}${v}"
+    		plasmidfinder.py -i $assembled_input/$file > CompGen/output/PlasmidFinder/$v1 
+    	done
+
+	
+	#run PlasmidFinder
+	#echo "Running Plasmidfinder"
+	#plasmidfinder.py -i $assembled_input > CompGen/output/PlasmidFinder/log.txt
+	# -o CompGen/output/PlasmidFinder/$output > 
+fi 
