@@ -50,8 +50,10 @@ parSNP=false
 virulence=false
 resistance=false
 tools=false
+sample=$false
+visualize=$false
 
-while getopts "hi:I:r:g:o:bmMpPVRt" option
+while getopts "hi:I:r:g:o:s:bmMpPVRtv" option
 do
 	case $option in
 		h) print_help
@@ -61,6 +63,7 @@ do
 		r) 	ref_genome=$OPTARG;;
 		g) 	gff_files=$OPTARG;;
 		o) 	output=$OPTARG;;
+		s) 	sample=$OPTARG;;
 		b) 	ANIb=true;;
 		m) 	ANIm=true;;
 		M) 	stringMLST=true;;
@@ -69,6 +72,7 @@ do
 		V) 	virulence=true;;
 		R) 	resistance=true;;
 		t) 	tools=true;;
+		v) 	visualize=true;;
 		*) 	echo "UNKNOWN OPTION $OPTARG PROVIDED"
 			exit;; #isnt echoing the option provided
 	esac
@@ -170,34 +174,66 @@ if $stringMLST; then
 	mkdir -p CompGen/tools/stringMLST CompGen/tools/stringMLST/extra CompGen/output/stringMLST
 
 	# Install stringMLST
-	if $install; then 
+	if $tools; then
 		echo "Installing stringMLST and its dependencies"
 		conda install -c bioconda stringmlst
 
 		#Install GrapeTree
 		echo "Installing GrapeTree and its dependencies"
 		pip install grapetree
-	fi 
-	echo "current dir is $PWD. installs have just finished"
+
+	fi
+	
 	# run stringMLST
 	echo "downloading database for $species from pubMLST..."
 	stringMLST.py --getMLST -P $PWD/CompGen/tools/stringMLST/datasets/ --species "Campylobacter jejuni"
-	echo "current dir is $PWD. --get MLST has finished running"
+	
 	echo "configuring database for $species..."
 	stringMLST.py --buildDB --config $PWD/CompGen/tools/stringMLST/datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
-	echo "current dir is $PWD. --buildDB has run "
+	
 	echo "running sequence typing for paired end reads..."
 	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv
-	echo "current dir is $PWD --predict has run"
+	
 	mv $PWD/CJ* $PWD/CompGen/tools/stringMLST/extra/
-	echo "current dir is $PWD extra files moved"
+	
 	echo "Done with stringMLST!"
 
 	# run GrapeTree to generate newick file for cluster visualization
 	echo "generating Newick file from allele profile"
 	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
-	echo "current dir is $PWD newick generated"
+	
 	echo "newick generated"
+
+	if $visualize; then
+
+	if $tools; then
+		echo "installing Toytree and its dependencies"
+		conda install toytree -c conda-forge
+	fi
+
+python3 - << EOF
+import toytree
+import toyplot
+import toyplot.pdf
+import numpy as np
+import subprocess as sp
+
+with open('$PWD/CompGen/output/stringMLST/7gMLST_${output}.newick', 'r') as fh:
+	newick = fh.read()
+
+tre = toytree.tree(newick)
+
+rtre = tre.root(wildcard="$sample") #the sample name need to become a variable for the final script it would become something like $sample
+#rtre.draw(tip_labels_align=True);
+
+canvas, axes, mark = rtre.draw()
+
+toyplot.pdf.render(canvas, "$PWD/CompGen/output/stringMLST/MLST_tree.pdf")
+EOF
+	fi
+echo "MLST profile tree generated"
+
+#MAY WANT TO CINSIDER SETTING THE VISUALIZE CHUNKS OF CODE OUTSIDE THE MLST AND SNP BLOCKS OTHERISE THE MLST AND SNP FLAG WOULD HAVE TO BE CALLED TO RUN THE TREE GENERATION 
 fi
 
 #running parsnp
@@ -222,7 +258,7 @@ if $parSNP; then
 	mkdir -p CompGen/tools/parsnp CompGen/tools/parsnp/extra CompGen/output/parsnp
 
 	#download tools
-	if $install; then 
+	if $tools; then 
 		echo "Installing parSNP..."
 		conda install -y -c bioconda parsnp
 	fi 
@@ -369,7 +405,7 @@ if $PlasmidFinder; then
 	cd CompGen/PlasmidFinder/tools
 	
 	#installing PlasmidFinder 
-	if $install; then 
+	if $tools; then 
 		echo "Installing Plasmidfinder"
 		conda install -c -y bioconda plasmidfinder 
 		download-db.sh
@@ -389,4 +425,44 @@ if $PlasmidFinder; then
 	#echo "Running Plasmidfinder"
 	#plasmidfinder.py -i $assembled_input > CompGen/output/PlasmidFinder/log.txt
 	# -o CompGen/output/PlasmidFinder/$output > 
-fi 
+fi
+
+
+
+
+
+# # toytree dev
+# # check to see if both sample provided if the visualize flag is called
+# if [ $visualize -a -z $sample ]; then
+# 	echo "No sample name provided. Please call the -s flag and enter a sample name"
+# 	exit
+# fi
+
+# if $visualize; then
+
+# 	if $tools; then
+# 		echo "installing Toytree and its dependencies"
+# 		conda install toytree -c conda-forge
+# 	fi
+
+# python3 - << EOF
+# import toytree
+# import toyplot
+# import toyplot.pdf
+# import numpy as np
+# import subprocess as sp
+
+# with open('$PWD/CompGen/output/stringMLST/7gMLST_${output}.newick', 'r') as fh:
+# 	newick = fh.read()
+
+# tre = toytree.tree(newick)
+
+# rtre = tre.root(wildcard="$sample") #the sample name need to become a variable for the final script it would become something like $sample
+# #rtre.draw(tip_labels_align=True);
+
+# canvas, axes, mark = rtre.draw()
+
+# toyplot.pdf.render(canvas, "$PWD/CompGen/output/stringMLST/MLST_tree.pdf")
+# EOF
+# fi
+# echo "MLST profile tree generated"
