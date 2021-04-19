@@ -85,9 +85,9 @@ mkdir -p CompGen/tools CompGen/output
 if $ANIb; then
 	
 	#check if input files exist
-	if [[ -f $assembled_input ]]
+	if [ $ANIb -a -z $assembled_input ]
 	then 
-		echo "Assemblies do not exist"
+		echo "Assemblies do not exist. Please call the -i flag and provide a path to the input directory of assembled reads"
 		exit
 	fi
 
@@ -125,9 +125,9 @@ fi
 if $ANIm; then
 
 	#check if input files exist
-	if [[ -f $assembled_input ]]
-	then 
-		echo "Assemblies do not exist"
+	if [ $ANIm -a -z $assembled_input ];
+	then
+		echo "Assemblies do not exist. Please call the -i flag and provide a path to the input directory of assembled reads"
 		exit
 	fi
 
@@ -243,7 +243,6 @@ if $parSNP; then
 
 	#check if reference exists
 	if [ $parSNP -a -z $ref_genome ];
-	#if [[ -f $ref_genome ]]
 	then 
 		echo "Reference genome not provided. Please call the -r flag and specify an assembled genome to serve as reference."
 		exit
@@ -311,9 +310,9 @@ fi
 if $virulence; then
 	
 	# check if input is correct 
-	if [[ -f $assembled_input ]]
+	if  [$virulence -a -z $assembled_input ]
 	then
-		echo "Assemblies do not exist"
+		echo "Assemblies do not exist. Please call the -i flag and provide a path to the input directory of assembled reads"
 		exit
 	fi
 
@@ -429,9 +428,9 @@ fi
 if $PlasmidFinder; then
 	
 	# check if input is correct 
-	if [[ -f $assembled_input ]]
+	if [ $PlasmidFinder -a -z $assembled_input ]
 	then
-		echo "Assemblies do not exist"
+		echo "Assemblies do not exist. Please call the -i flag and provide a path to the input directory of assembled reads"
 		exit
 	fi
 	
