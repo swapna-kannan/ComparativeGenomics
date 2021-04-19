@@ -2,18 +2,18 @@
 #Usage that the user is going to see
 print_help() { echo "
 USAGE
-        #need to add the final usage of the pipeline here
+        Comparative_master_pipeline [OPTIONS...] < -o output name > [-t] [-i ASSEMBLED_INPUT_READS_DIRECTORY] [-I RAW_INPUT_READS_DIRECTORY] [-g GFF_FILES_DIRECTORY] [-r PARSNP_REFERENCE_FILE] [-b] [-m] [-M] [-p] [-P] [-V] [-R] 
+
 
 DESCRIPTION
 This is a script to install and run a pipeline for Comparative Genomics Analysis.
-There are multiple tools that you can choose from and run. The script takes in either FASTA files or raw reads,
-for input and you can run it through tools such as ANI, MLST, SNP Analysis, VFDB, PlasmidFinder.
+There are multiple tools that you can choose from and run. 
+The script takes in FASTA files for ANI, SNP analysis, Virulence and PlasmidFinder. It takes in raw reads for MLST and it takes in gff annonated files to find resistance genes. 
 
 PREREQUISTITES:
         git
         conda
-        tools folder with SRST2
-        #ADD MORE
+        tools folder with SRST2 and VF database 
 
 TOOLS INSTALLED/INVOKED:
         SNP Level: parSNP
@@ -21,11 +21,11 @@ TOOLS INSTALLED/INVOKED:
         Virulence Level: VFDB,SRST2,BLAST
         Accessory DNA: PlasmidFinder
 OPTIONS
-        -i      PATH for input of  assembled .fasta files.
-        -o      Output name for the files.
-        -I      PATH for input of raw reads. This is used for stringMLST.
-	-g	PATH for annotated gff files. This is used for resistance. 
-	-N 	To install any of the tools 
+        -t	installs tools 
+        -o      Output name for the files
+        -i      PATH for input of  assembled .fasta files
+        -I      PATH for input of raw reads. This is used for stringMLST
+        -g	PATH for annotated gff files. This is used for resistance
         -r      fasta file for the reference genome
         -b      run pyANI with ANIb
         -m      run pyANI with ANIm
@@ -51,9 +51,8 @@ virulence=false
 resistance=false
 tools=false
 sample=$false
-visualize=$false
 
-while getopts "hi:I:r:g:o:s:bmMpPVRtv" option
+while getopts "hi:I:r:g:o:s:bmMpPVRt" option
 do
 	case $option in
 		h) print_help
@@ -72,7 +71,6 @@ do
 		V) 	virulence=true;;
 		R) 	resistance=true;;
 		t) 	tools=true;;
-		v) 	visualize=true;;
 		*) 	echo "UNKNOWN OPTION $OPTARG PROVIDED"
 			exit;; #isnt echoing the option provided
 	esac
@@ -105,17 +103,15 @@ if $ANIb; then
 		conda install -y biopython
 		conda install -y -c bioconda pyani
 		conda install -y -c bioconda blast-legacy
-		#conda install -c bioconda mummer blast legacy-blast -y
 		conda install -y -c bioconda/label/cf201901 blast-legacy
 		conda install -y -c biocore blast-legacy
-	fi 
+	fi
 	
-
 	#run the ANIm command
 	echo "Calculating average nucleotide identity using ANIm..."
 	average_nucleotide_identity.py -o CompGen/output/ANIb/$output -i $assembled_input -m ANIb -g -f -v
 	
-	# deactivate pyani_env 
+	# deactivate pyani_env
 	conda deactivate
 	conda env remove -n pyani_env
 
@@ -141,7 +137,7 @@ if $ANIm; then
 		
 	#download tools
 	if $tools; then
-		echo "Installing pyani..." 
+		echo "Installing pyani..."
 		conda install -y biopython
 		conda install -y -c bioconda pyani
 		conda install -y -c bioconda blast-legacy
@@ -155,7 +151,7 @@ if $ANIm; then
 	echo "Calculating average nucleotide identity using ANIm..."
 	average_nucleotide_identity.py -o CompGen/output/ANIm/$output -i $assembled_input -m ANIm -g -f -v
 	
-	# deactivate pyani_env 
+	# deactivate pyani_env
 	conda deactivate
 	conda env remove -n pyani_env
 
@@ -269,7 +265,7 @@ if $parSNP; then
 	mkdir -p CompGen/tools/parsnp CompGen/tools/parsnp/extra CompGen/output/parsnp
 
 	#download tools
-	if $tools; then 
+	if $tools; then
 		echo "Installing parSNP..."
 		conda install -y -c bioconda parsnp
 
@@ -303,26 +299,25 @@ EOF
 
 	echo "SNP tree generated"
 
-	#FIND OUTPUT FILE NAME AND MOVE TO OUTPUT FOLDER 
 fi
 
 # running virulence
 if $virulence; then
 	
-	# check if input is correct 
+	# check if input is correct
 	if  [$virulence -a -z $assembled_input ]
 	then
 		echo "Assemblies do not exist. Please call the -i flag and provide a path to the input directory of assembled reads"
 		exit
 	fi
 
-	#make tools and output directory for virulence 
+	#make tools and output directory for virulence
 	mkdir -p CompGen/tools/virulence CompGen/tools/virulence/extra CompGen/output/virulence
 
 	# create a virtual env with python 2 to run srst2
 	conda create -y --name temp_py2 python=2.7
 	eval "$(conda shell.bash hook)"
-	source ./anaconda3/bin/activate temp_py2 #need to check path to conda 
+	source ./anaconda3/bin/activate temp_py2 #need to check path to conda
 	conda activate temp_py2
 	
 	#virulence needs the tools installed everytime bc it's making a new environment
@@ -330,9 +325,9 @@ if $virulence; then
 	conda install -y biopython
 	echo "Installing srst2"
 	conda install -y -c bioconda srst2
-	echo "Installing cd-hit" 
+	echo "Installing cd-hit"
 	conda install -y -c bioconda cd-hit
-	echo "Installing blast" 
+	echo "Installing blast"
 	conda install -y -c bioconda blast
 
 	# generate the reference files for genus
