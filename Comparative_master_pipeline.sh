@@ -30,7 +30,7 @@ OPTIONS
         -b      run pyANI with ANIb
         -m      run pyANI with ANIm
         -M      run stringMLST
-        -p      run parSNP
+        -p      run parSNP NOTE: when running parSNP, pass the -r command and select a sample for your reference, then pass the -s command and select a DIFFERENT sample for rooting the tree
         -P      run PlasmidFinder
         -V      run SRST2 and BLAST
         -R      Find resistance genes
