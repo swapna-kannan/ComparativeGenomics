@@ -230,7 +230,7 @@ canvas, axes, mark = rtre.draw()
 
 toyplot.pdf.render(canvas, "$PWD/CompGen/output/stringMLST/MLST_tree.pdf")
 EOF
-fi
+	fi
 echo "MLST profile tree generated"
 
 #MAY WANT TO CINSIDER SETTING THE VISUALIZE CHUNKS OF CODE OUTSIDE THE MLST AND SNP BLOCKS OTHERISE THE MLST AND SNP FLAG WOULD HAVE TO BE CALLED TO RUN THE TREE GENERATION 
