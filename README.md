@@ -71,6 +71,7 @@ Comparative_mater_pipeline.sh -t -i <assembled_fasta_input> -p -o <output name> 
 ## Virulence 
 <ADD DESCRIPTION>
 The files for the Virulence database is in the github folder. If you clone this repository, the tools folder has the required information.
+  
 The command used was:
 
 ```
