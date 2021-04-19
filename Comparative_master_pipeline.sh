@@ -38,9 +38,9 @@ OPTIONS
 }
 
 #our GETOPTS BLOCK
-assembled_input=false
-raw_input=false 
-ref_genome=false
+assembled_input=$false
+raw_input=$false 
+ref_genome=$false
 gff_files=false
 ANIb=false
 ANIm=false
@@ -164,10 +164,16 @@ fi
 #running MLST
 if $stringMLST; then
 
-	#check if input files exist
-	if [[ -f $raw_reads ]]
+	# check if input files exist
+	if [ $stringMLST -a -z $raw_input ];
 	then 
-		echo "Raw reads do not exist"
+		echo "Raw reads input for provided. Please call the -I flag and provide path to a directory of raw reads."
+		exit
+	fi
+
+	# check if Sample name provided alongside stringMLST flag
+	if [ $stringMLST -a -z $sample ]; then
+		echo "No sample name provided. Please call the -s flag and enter a sample name"
 		exit
 	fi
 
@@ -178,10 +184,13 @@ if $stringMLST; then
 		echo "Installing stringMLST and its dependencies"
 		conda install -c bioconda stringmlst
 
-		#Install GrapeTree
+		# Install GrapeTree
 		echo "Installing GrapeTree and its dependencies"
 		pip install grapetree
 
+		# Install Toytree
+		echo "Installing Toytree and its dependencies"
+		conda install toytree -c conda-forge
 	fi
 	
 	# run stringMLST
@@ -202,14 +211,8 @@ if $stringMLST; then
 	echo "generating Newick file from allele profile"
 	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
 	
-	echo "newick generated"
-
-	if $visualize; then
-
-	if $tools; then
-		echo "installing Toytree and its dependencies"
-		conda install toytree -c conda-forge
-	fi
+	echo "Newick file generated"
+	echo "Generating tree PDF"
 
 python3 - << EOF
 import toytree
@@ -220,36 +223,45 @@ import subprocess as sp
 
 with open('$PWD/CompGen/output/stringMLST/7gMLST_${output}.newick', 'r') as fh:
 	newick = fh.read()
-
+print(newick)
 tre = toytree.tree(newick)
 
-rtre = tre.root(wildcard="$sample") #the sample name need to become a variable for the final script it would become something like $sample
+rtre = tre.root(wildcard="${sample}")
 #rtre.draw(tip_labels_align=True);
 
 canvas, axes, mark = rtre.draw()
 
-toyplot.pdf.render(canvas, "$PWD/CompGen/output/stringMLST/MLST_tree.pdf")
+toyplot.pdf.render(canvas, "$PWD/CompGen/output/stringMLST/MLSTtree_${output}.pdf")
 EOF
-	fi
-echo "MLST profile tree generated"
 
-#MAY WANT TO CINSIDER SETTING THE VISUALIZE CHUNKS OF CODE OUTSIDE THE MLST AND SNP BLOCKS OTHERISE THE MLST AND SNP FLAG WOULD HAVE TO BE CALLED TO RUN THE TREE GENERATION 
+	echo "MLST profile tree generated"
+
 fi
 
 #running parsnp
 if $parSNP; then
 
 	#check if reference exists
-	if [[ -f $ref_genome ]]
+	if [ $parSNP -a -z $ref_genome ];
+	#if [[ -f $ref_genome ]]
 	then 
-		echo "reference genome do not exist"
+		echo "Reference genome not provided. Please call the -r flag and specify an assembled genome to serve as reference."
 		exit
 	fi
-     
-     	# check if input is correct 
-     	if [[ -f $assembled_input ]]
+
+	if [ $parSNP -a -z $sample ]; then
+		echo "No sample name provided. Please call the -s flag and enter a sample name"
+		exit
+	fi
+
+	if [ $sample -eq $ref_gemome ]; then
+		echo "For the -s flag, please provide a sample that is different from the reference."
+		exit
+	fi
+	# check if input is correct 
+	if [ $parSNP -a -z $assembled_input ]
 	then 
-		echo "Assemblies do not exist"
+		echo "Assembled genomes not provided. Please call the -i flag and specify the file path to assembled genomes directory"
 		exit
 	fi
 
@@ -261,15 +273,39 @@ if $parSNP; then
 	if $tools; then 
 		echo "Installing parSNP..."
 		conda install -y -c bioconda parsnp
+
+	# Install Toytree
+		echo "Installing Toytree..."
+		conda install toytree -c conda-forge
 	fi 
 
 	#run parsnp
 	parsnp -r $assembled_input/$ref_genome -d $assembled_input -o CompGen/output/parsnp/$output
 
+	# generate tree with Toytree
+	python3 - << EOF
+import toytree
+import toyplot
+import toyplot.pdf
+import numpy as np
+import subprocess as sp
+
+with open('$PWD/CompGen/output/parsnp/$output/parsnp.tree', 'r') as fh:
+	newick = fh.read()
+tre = toytree.tree(newick)
+
+rtre = tre.root(wildcard="${sample}")
+#rtre.draw(tip_labels_align=True);
+
+canvas, axes, mark = rtre.draw()
+
+toyplot.pdf.render(canvas, "$PWD/CompGen/output/parsnp/${output}/${output}_tree.pdf")
+EOF
+
+	echo "SNP tree generated"
+
 	#FIND OUTPUT FILE NAME AND MOVE TO OUTPUT FOLDER 
 fi
-
-
 
 # running virulence
 if $virulence; then
@@ -353,7 +389,6 @@ if $resistance; then
 	
 	#make the output directory 
 	mkdir -p CompGen/output/Deeparg CompGen/tools/Deeparg
-	
 
 	# get all the gene names
 	for file in $(ls $gff_files); do
@@ -412,8 +447,7 @@ if $PlasmidFinder; then
 	fi  
 	
 	echo "Running plasmidfinder"  
-    	for file in $(ls $assembled_input);  
-    	do 
+    	for file in $(ls $assembled_input); do
     		echo "$file"
     		v=$(echo $file | cut -d "." -f 1)
     		v1="${output}${v}"
@@ -426,43 +460,3 @@ if $PlasmidFinder; then
 	#plasmidfinder.py -i $assembled_input > CompGen/output/PlasmidFinder/log.txt
 	# -o CompGen/output/PlasmidFinder/$output > 
 fi
-
-
-
-
-
-# # toytree dev
-# # check to see if both sample provided if the visualize flag is called
-# if [ $visualize -a -z $sample ]; then
-# 	echo "No sample name provided. Please call the -s flag and enter a sample name"
-# 	exit
-# fi
-
-# if $visualize; then
-
-# 	if $tools; then
-# 		echo "installing Toytree and its dependencies"
-# 		conda install toytree -c conda-forge
-# 	fi
-
-# python3 - << EOF
-# import toytree
-# import toyplot
-# import toyplot.pdf
-# import numpy as np
-# import subprocess as sp
-
-# with open('$PWD/CompGen/output/stringMLST/7gMLST_${output}.newick', 'r') as fh:
-# 	newick = fh.read()
-
-# tre = toytree.tree(newick)
-
-# rtre = tre.root(wildcard="$sample") #the sample name need to become a variable for the final script it would become something like $sample
-# #rtre.draw(tip_labels_align=True);
-
-# canvas, axes, mark = rtre.draw()
-
-# toyplot.pdf.render(canvas, "$PWD/CompGen/output/stringMLST/MLST_tree.pdf")
-# EOF
-# fi
-# echo "MLST profile tree generated"
