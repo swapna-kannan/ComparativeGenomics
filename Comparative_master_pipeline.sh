@@ -256,7 +256,7 @@ if $virulence; then
 	echo "Installing cd-hit" 
 	conda install -y -c bioconda cd-hit
 	echo "Installing blast" 
-	conda install -c bioconda blast
+	conda install -y -c bioconda blast
 
 	# generate the reference files for genus
 	python ./tools/srst2/database_clustering/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
@@ -272,15 +272,13 @@ if $virulence; then
 	makeblastdb -in Campylobacter_VF_clustered.fasta -dbtype 'nucl' -out CompGen/tools/virulence/extra/Campylobacter_database
 
 	# run blast on all the files and put results in output folder
-	for file in $assembled_input; do
-		echo $file
+	for file in $(ls $assembled_input); do
 		blastn -db CompGen/tools/virulence/extra/Campylobacter_database -query $assembled_input/$file -perc_identity .98 -out CompGen/tools/virulence/$file -outfmt "6 stitle"
 	done
 
 
 	# get all the gene names
-	for file in $(ls CompGen/tools/virulence); do
-        	echo $file
+	for file in $(ls CompGen/tools/virulence/*fasta); do
 		awk '{print $3}' $file >> CompGen/tools/virulence/extra/VF_all_$output.txt
 	done
 
@@ -288,19 +286,19 @@ if $virulence; then
 	sort CompGen/tools/virulence/extra/VF_all_$output.txt | uniq >> CompGen/tools/virulence/extra/VF_unique_$output.txt
 	long_line=""
 	for line in $(cat CompGen/tools/virulence/extra/VF_unique_$output.txt); do
-        	long_line+="    $line"
+        	long_line+="	$line"
 	done
 
 	echo "$long_line" > CompGen/tools/virulence/VF_table_$output.txt
 
 	# check if gene is in each file and add info to VF_table.txt
-	for file in $(ls CompGen/tools/virulence); do
+	for file in $(ls CompGen/tools/virulence/*fasta); do
         	data="$file     "
         	for line in $(cat CompGen/tools/virulence/extra/VF_unique_$output.txt); do
-                	if grep -q $line CompGen/tools/virulence/$file; then
-                        	data+="X        "
+                	if grep -q $line $file; then
+                        	data+="X	"
                		else
-                        	data+=" "
+                        	data+="	"
                 	fi
         	done
         	echo "$data" >> CompGen/output/virulence/VF_table_$output.txt
@@ -316,8 +314,9 @@ if $resistance; then
 	
 
 	# get all the gene names
-	for file in $gff_files; do
-        	grep DeepARG $file  | awk '{print $9}' | sed 's/|/,/g' >> CompGen/tools/Deeparg/res_temp_$output.txt
+	for file in $(ls $gff_files); do
+		echo $file
+        	grep DeepARG $gff_files/$file  | awk '{print $9}' | sed 's/|/,/g' >> CompGen/tools/Deeparg/res_temp_$output.txt
 	done
 
 	for line in $(cat CompGen/tools/Deeparg/res_temp_$output.txt); do
@@ -329,19 +328,19 @@ if $resistance; then
 	sort CompGen/tools/Deeparg/res_all_$output.txt | uniq >> CompGen/tools/Deeparg/res_unique_$output.txt
 	long_line=""
 	for line in $(cat CompGen/tools/Deeparg/res_unique_$output.txt); do
-        	long_line+="    $line"
+        	long_line+="	$line"
 	done
 
 	echo "$long_line" > CompGen/output/Deeparg/res_table_$output.txt
 
 	# check if gene is in each file and add info to VF_table.txt
-	for file in $gff_files; do
-        	data="$file     "
-        	for line in $(cat res_unique.txt); do
-                	if grep -q $line $file; then
-                        	data+="X        "
+	for file in $(ls $gff_files); do
+        	data="$file	"
+        	for line in $(cat CompGen/tools/Deeparg/res_unique_$output.txt); do
+                	if grep -q $line $gff_files/$file; then
+                        	data+="X	"
                 	else
-                        	data+=" "
+                        	data+="	"
                 	fi
         	done
         echo "$data" >> CompGen/output/Deeparg/res_table_$output.txt
