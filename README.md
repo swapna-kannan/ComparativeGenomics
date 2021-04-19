@@ -22,6 +22,7 @@ Further details available at our [class wiki page].
         -I      PATH for input of raw reads. This is used for stringMLST
         -g	    PATH for annotated gff files. This is used for resistance
         -r      fasta file for the reference genome
+        -s      sample name to root phylogenetic tree; MUST BE DIFFERENT THAN REFERENCE 
         -b      run pyANI with ANIb
         -m      run pyANI with ANIm
         -M      run stringMLST
@@ -57,14 +58,14 @@ comparative_master_pipeline.sh -t -i <assembled_fasta_input> -m -o <output name>
   
 The command used was:
 ```
-comparative_master_pipeline.sh -t -I <raw input fasta file> -M -o <output name>
+comparative_master_pipeline.sh -t -I <raw input fasta file> -M -o <output name> -s <sample to root tree>
 ```
 ## parSNP
 <ADD DESCRIPTION>
 The command used was:
   
 ```
-comparative_mater_pipeline.sh -t -i <assembled_fasta_input> -p -o <output name> -r <reference file>
+comparative_mater_pipeline.sh -t -i <assembled_fasta_input> -p -o <output name> -r <reference file> -s <sample to root tree>
 ``` 
 
 ## Virulence 
