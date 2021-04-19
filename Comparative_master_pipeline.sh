@@ -2,18 +2,18 @@
 #Usage that the user is going to see
 print_help() { echo "
 USAGE
-        Comparative_master_pipeline [OPTIONS...] < -o output name > [-t] [-i ASSEMBLED_INPUT_READS_DIRECTORY] [-I RAW_INPUT_READS_DIRECTORY] [-g GFF_FILES_DIRECTORY] [-r PARSNP_REFERENCE_FILE] [-b] [-m] [-M] [-p] [-P] [-V] [-R] 
+        Comparative_master_pipeline [OPTIONS...] < -o output name > [-t] [-i ASSEMBLED_INPUT_READS_DIRECTORY] [-I RAW_INPUT_READS_DIRECTORY] [-g GFF_FILES_DIRECTORY] [-r PARSNP_REFERENCE_FILE] [-b] [-m] [-M] [-p] [-P] [-V] [-R]
 
 
 DESCRIPTION
 This is a script to install and run a pipeline for Comparative Genomics Analysis.
-There are multiple tools that you can choose from and run. 
-The script takes in FASTA files for ANI, SNP analysis, Virulence and PlasmidFinder. It takes in raw reads for MLST and it takes in gff annonated files to find resistance genes. 
+There are multiple tools that you can choose from and run.
+The script takes in FASTA files for ANI, SNP analysis, Virulence and PlasmidFinder. It takes in raw reads for MLST and it takes in gff annonated files to find resistance genes.
 
 PREREQUISTITES:
         git
         conda
-        tools folder with SRST2 and VF database 
+        tools folder with SRST2 and VF database
 
 TOOLS INSTALLED/INVOKED:
         SNP Level: parSNP
@@ -39,7 +39,7 @@ OPTIONS
 
 #our GETOPTS BLOCK
 assembled_input=$false
-raw_input=$false 
+raw_input=$false
 ref_genome=$false
 gff_files=false
 ANIb=false
@@ -71,7 +71,7 @@ do
 		V) 	virulence=true;;
 		R) 	resistance=true;;
 		t) 	tools=true;;
-		*) 	echo "UNKNOWN OPTION $OPTARG PROVIDED"
+		*) 	echo "UNKNOWN OPTION PROVIDED"
 			exit;; #isnt echoing the option provided
 	esac
 done
@@ -99,7 +99,7 @@ if $ANIb; then
 		
 	#download tools
 	if $tools; then
-		echo "Installing pyani..." 
+		echo "Installing pyani..."
 		conda install -y biopython
 		conda install -y -c bioconda pyani
 		conda install -y -c bioconda blast-legacy
@@ -197,7 +197,7 @@ if $stringMLST; then
 	stringMLST.py --buildDB --config $PWD/CompGen/tools/stringMLST/datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
 	
 	echo "running sequence typing for paired end reads..."
-	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv
+	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv
 	
 	mv $PWD/CJ* $PWD/CompGen/tools/stringMLST/extra/
 	
@@ -205,7 +205,7 @@ if $stringMLST; then
 
 	# run GrapeTree to generate newick file for cluster visualization
 	echo "generating Newick file from allele profile"
-	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
+	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
 	
 	echo "Newick file generated"
 	echo "Generating tree PDF"
@@ -375,6 +375,8 @@ if $virulence; then
         	done
         	echo "$data" >> CompGen/output/virulence/VF_table_$output.txt
 	done
+
+	mv Campylobacter* CompGen/tools/virulence/extra
 fi
 
 
@@ -448,9 +450,5 @@ if $PlasmidFinder; then
     		plasmidfinder.py -i $assembled_input/$file > CompGen/output/PlasmidFinder/$v1 
     	done
 
-	
-	#run PlasmidFinder
-	#echo "Running Plasmidfinder"
-	#plasmidfinder.py -i $assembled_input > CompGen/output/PlasmidFinder/log.txt
-	# -o CompGen/output/PlasmidFinder/$output > 
+	mv json.data CompGen/output/PlasmidFinder/${output}_json.data
 fi
