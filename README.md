@@ -8,7 +8,8 @@ This repository includes a script to run a Comparative Genomics pipeline. <Infor
 **```Comparative_master_pipeline.sh```**
 This script is to install and run a pipeline which takes assembled or raw fasta sequences and runs them through various tool to gain more insight into the genetic relatedness of the samples. The script can be run with and without tool installations. The script can also run as few as one tool and as many as all of the tools. Further information about the specific outputs are listed below. 
 Further details available at our [class wiki page].
-<INSERT CLASS WIKI PAGE>
+
+https://github.gatech.edu/comgenomics2021/Team1-ComparativeGenomics
   
 ##### PREREQUISITES:
 -    git
