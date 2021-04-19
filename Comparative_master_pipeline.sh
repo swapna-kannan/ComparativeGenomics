@@ -51,23 +51,26 @@ virulence=false
 resistance=false
 tools=false
 
-while getopts "hi:I:r:g:o:bmMpPVRt" option; do
-	case "$option" in
-		h)print_help exit;;
-		i)assembled_input=$OPTARG;;
-		I)raw_input=$OPTARG;;
-		r)ref_genome=$OPTARG;;
-		g)gff_files=$OPTARG;; 
-		o)output=$OPTARG;;
-		b)ANIb=true;;
-		m)ANIm=true;;
-		M)stringMLST=true;;
-		p)parSNP=true;;
-		P)PlasmidFinder=true;;
-		V)virulence=true;;
-		R)resistance=true;;
-		t)tools=true;;
-		*)echo "UNKNOWN OPTION $OPTARG PROVIDED" exit;; #isn't echoing the option provided 
+while getopts "hi:I:r:g:o:bmMpPVRt" option
+do
+	case $option in
+		h) print_help
+			exit;;
+		i) 	assembled_input=$OPTARG;;
+		I) 	raw_input=$OPTARG;;
+		r) 	ref_genome=$OPTARG;;
+		g) 	gff_files=$OPTARG;;
+		o) 	output=$OPTARG;;
+		b) 	ANIb=true;;
+		m) 	ANIm=true;;
+		M) 	stringMLST=true;;
+		p) 	parSNP=true;;
+		P) 	PlasmidFinder=true;;
+		V) 	virulence=true;;
+		R) 	resistance=true;;
+		t) 	tools=true;;
+		*) 	echo "UNKNOWN OPTION $OPTARG PROVIDED"
+			exit;; #isnt echoing the option provided
 	esac
 done
 
@@ -165,7 +168,6 @@ if $stringMLST; then
 	fi
 
 	mkdir -p CompGen/tools/stringMLST CompGen/tools/stringMLST/extra CompGen/output/stringMLST
-	cd CompGen/tools/stringMLST
 
 	# Install stringMLST
 	if $install; then 
@@ -176,22 +178,26 @@ if $stringMLST; then
 		echo "Installing GrapeTree and its dependencies"
 		pip install grapetree
 	fi 
-
+	echo "current dir is $PWD. installs have just finished"
 	# run stringMLST
-	echo"downloading database for $species from pubMLST..."
-	stringMLST.py --getMLST -P datasets/ --species "Campylobacter jejuni"
-
+	echo "downloading database for $species from pubMLST..."
+	stringMLST.py --getMLST -P $PWD/CompGen/tools/stringMLST/datasets/ --species "Campylobacter jejuni"
+	echo "current dir is $PWD. --get MLST has finished running"
 	echo "configuring database for $species..."
-	stringMLST.py --buildDB --config datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
-
+	stringMLST.py --buildDB --config $PWD/CompGen/tools/stringMLST/datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
+	echo "current dir is $PWD. --buildDB has run "
 	echo "running sequence typing for paired end reads..."
-	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $outputDir #<-- needs to be updated
-	mv ./CompGen/tools/stringMLST/CJ* ./CompGen/tools/stringMLST/extra/
-	echo "Done!"
+	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv
+	echo "current dir is $PWD --predict has run"
+	mv $PWD/CJ* $PWD/CompGen/tools/stringMLST/extra/
+	echo "current dir is $PWD extra files moved"
+	echo "Done with stringMLST!"
 
 	# run GrapeTree to generate newick file for cluster visualization
 	echo "generating Newick file from allele profile"
-	#grapetree -p <mlst_output_name> -m "MSTreeV2" > <mlst_output_name.newick> #<-- this needs to be updated... I'll talk about this more with yall tomorrow regarding output names and pathing
+	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
+	echo "current dir is $PWD newick generated"
+	echo "newick generated"
 fi
 
 #running parsnp
