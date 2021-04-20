@@ -435,14 +435,14 @@ if $PlasmidFinder; then
 	
 	#making the directories
 	mkdir -p CompGen/tools CompGen/tools/PlasmidFinder/extra CompGen/output/PlasmidFinder
-	cd CompGen/PlasmidFinder/tools
+	cd CompGen/tools/PlasmidFinder
 	
 	#installing PlasmidFinder
 	if $tools; then
 		echo "Installing Plasmidfinder"
 		conda install -c bioconda plasmidfinder -y
 		download-db.sh
-	fi  
+	fi
 	
 	echo "Running plasmidfinder"  
     	for file in $(ls $assembled_input); do
