@@ -2,18 +2,18 @@
 #Usage that the user is going to see
 print_help() { echo "
 USAGE
-        Comparative_master_pipeline [OPTIONS...] < -o output name > [-t] [-i ASSEMBLED_INPUT_READS_DIRECTORY] [-I RAW_INPUT_READS_DIRECTORY] [-g GFF_FILES_DIRECTORY] [-r PARSNP_REFERENCE_FILE] [-b] [-m] [-M] [-p] [-P] [-V] [-R] 
+        Comparative_master_pipeline [OPTIONS...] < -o output name > [-t] [-i ASSEMBLED_INPUT_READS_DIRECTORY] [-I RAW_INPUT_READS_DIRECTORY] [-g GFF_FILES_DIRECTORY] [-r PARSNP_REFERENCE_FILE] [-b] [-m] [-M] [-p] [-P] [-V] [-R]
 
 
 DESCRIPTION
 This is a script to install and run a pipeline for Comparative Genomics Analysis.
-There are multiple tools that you can choose from and run. 
-The script takes in FASTA files for ANI, SNP analysis, Virulence and PlasmidFinder. It takes in raw reads for MLST and it takes in gff annonated files to find resistance genes. 
+There are multiple tools that you can choose from and run.
+The script takes in FASTA files for ANI, SNP analysis, Virulence and PlasmidFinder. It takes in raw reads for MLST and it takes in gff annonated files to find resistance genes.
 
 PREREQUISTITES:
         git
         conda
-        tools folder with SRST2 and VF database 
+        tools folder with SRST2 and VF database
 
 TOOLS INSTALLED/INVOKED:
         SNP Level: parSNP
@@ -30,7 +30,7 @@ OPTIONS
         -b      run pyANI with ANIb
         -m      run pyANI with ANIm
         -M      run stringMLST
-        -p      run parSNP
+        -p      run parSNP NOTE: when running parSNP, pass the -r command and select a sample for your reference, then pass the -s command and select a DIFFERENT sample for rooting the tree
         -P      run PlasmidFinder
         -V      run SRST2 and BLAST
         -R      Find resistance genes
@@ -39,7 +39,7 @@ OPTIONS
 
 #our GETOPTS BLOCK
 assembled_input=$false
-raw_input=$false 
+raw_input=$false
 ref_genome=$false
 gff_files=false
 ANIb=false
@@ -71,7 +71,7 @@ do
 		V) 	virulence=true;;
 		R) 	resistance=true;;
 		t) 	tools=true;;
-		*) 	echo "UNKNOWN OPTION $OPTARG PROVIDED"
+		*) 	echo "UNKNOWN OPTION PROVIDED"
 			exit;; #isnt echoing the option provided
 	esac
 done
@@ -92,14 +92,14 @@ if $ANIb; then
 	#make tools and output directory for ANIm
 	mkdir -p CompGen/tools/ANIb CompGen/tools/ANIb/extra CompGen/output/ANIb
 	
-	conda create --name pyani_env python=3.8 -y
-	eval "$(conda shell.bash hook)"
-	source ./anaconda3/bin/activate pyani_env
-	conda activate pyani_env
+	 conda create --name pyani_env python=3.8 -y
+	 eval "$(conda shell.bash hook)"
+	 source ./anaconda3/bin/activate pyani_env
+	 conda activate pyani_env
 		
 	#download tools
 	if $tools; then
-		echo "Installing pyani..." 
+		echo "Installing pyani..."
 		conda install -y biopython
 		conda install -y -c bioconda pyani
 		conda install -y -c bioconda blast-legacy
@@ -111,15 +111,15 @@ if $ANIb; then
 	echo "Calculating average nucleotide identity using ANIm..."
 	average_nucleotide_identity.py -o CompGen/output/ANIb/$output -i $assembled_input -m ANIb -g -f -v
 	
-	# deactivate pyani_env
-	conda deactivate
-	conda env remove -n pyani_env
+	 deactivate pyani_env
+	 conda deactivate
+	 conda env remove -n pyani_env
 
 fi
 
 #running aniM
 if $ANIm; then
-
+	echo "starting ANIm processes"
 	#check if input files exist
 	if [ $ANIm -a -z $assembled_input ];
 	then
@@ -130,18 +130,18 @@ if $ANIm; then
 	#make tools and output directory for ANIm
 	mkdir -p CompGen/tools/ANIm CompGen/tools/ANIm/extra CompGen/output/ANIm
 	
-	conda create --name pyani_env python=3.8 -y
-	eval "$(conda shell.bash hook)"
-	source ./anaconda3/bin/activate pyani_env
-	conda activate pyani_env
-		
+	 conda create --name pyani_env python=3.8 -y
+	 eval "$(conda shell.bash hook)"
+	 source ./anaconda3/bin/activate pyani_env
+	 conda activate pyani_env
+
 	#download tools
 	if $tools; then
 		echo "Installing pyani..."
 		conda install -y biopython
 		conda install -y -c bioconda pyani
 		conda install -y -c bioconda blast-legacy
-		#conda install -c bioconda mummer blast legacy-blast -y
+		conda install -y -c bioconda mummer blast legacy-blast
 		conda install -y -c bioconda/label/cf201901 blast-legacy
 		conda install -y -c biocore blast-legacy
 	fi 
@@ -149,11 +149,11 @@ if $ANIm; then
 
 	#run the ANIm command
 	echo "Calculating average nucleotide identity using ANIm..."
-	average_nucleotide_identity.py -o CompGen/output/ANIm/$output -i $assembled_input -m ANIm -g -f -v
+	average_nucleotide_identity.py -o CompGen/output/ANIm/$output -i $assembled_input -m ANIm -g -f -v --maxmatch
 	
-	# deactivate pyani_env
-	conda deactivate
-	conda env remove -n pyani_env
+	 conda deactivate pyani_env
+	 conda deactivate
+	 conda env remove -n pyani_env
 
 fi
 
@@ -178,15 +178,17 @@ if $stringMLST; then
 	# Install stringMLST
 	if $tools; then
 		echo "Installing stringMLST and its dependencies"
-		conda install -c bioconda stringmlst
+		conda install -c bioconda stringmlst -y
 
 		# Install GrapeTree
 		echo "Installing GrapeTree and its dependencies"
-		pip install grapetree
+		pip install grapetree 
+		conda install pandas -y
+		conda install requests -y
 
 		# Install Toytree
 		echo "Installing Toytree and its dependencies"
-		conda install toytree -c conda-forge
+		conda install toytree -c conda-forge -y
 	fi
 	
 	# run stringMLST
@@ -197,7 +199,7 @@ if $stringMLST; then
 	stringMLST.py --buildDB --config $PWD/CompGen/tools/stringMLST/datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
 	
 	echo "running sequence typing for paired end reads..."
-	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv
+	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv
 	
 	mv $PWD/CJ* $PWD/CompGen/tools/stringMLST/extra/
 	
@@ -205,7 +207,7 @@ if $stringMLST; then
 
 	# run GrapeTree to generate newick file for cluster visualization
 	echo "generating Newick file from allele profile"
-	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.csv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
+	grapetree -p $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv -m "MSTreeV2" > $PWD/CompGen/output/stringMLST/7gMLST_${output}.newick
 	
 	echo "Newick file generated"
 	echo "Generating tree PDF"
@@ -271,7 +273,7 @@ if $parSNP; then
 
 	# Install Toytree
 		echo "Installing Toytree..."
-		conda install toytree -c conda-forge
+		conda install toytree -c conda-forge -y
 	fi 
 
 	#run parsnp
@@ -375,6 +377,8 @@ if $virulence; then
         	done
         	echo "$data" >> CompGen/output/virulence/VF_table_$output.txt
 	done
+
+	mv Campylobacter* CompGen/tools/virulence/extra
 fi
 
 
@@ -429,14 +433,14 @@ if $PlasmidFinder; then
 		exit
 	fi
 	
-	#making the directories 
+	#making the directories
 	mkdir -p CompGen/tools CompGen/tools/PlasmidFinder/extra CompGen/output/PlasmidFinder
 	cd CompGen/PlasmidFinder/tools
 	
-	#installing PlasmidFinder 
-	if $tools; then 
+	#installing PlasmidFinder
+	if $tools; then
 		echo "Installing Plasmidfinder"
-		conda install -c -y bioconda plasmidfinder 
+		conda install -c bioconda plasmidfinder -y
 		download-db.sh
 	fi  
 	
@@ -448,9 +452,6 @@ if $PlasmidFinder; then
     		plasmidfinder.py -i $assembled_input/$file > CompGen/output/PlasmidFinder/$v1 
     	done
 
-	
-	#run PlasmidFinder
-	#echo "Running Plasmidfinder"
-	#plasmidfinder.py -i $assembled_input > CompGen/output/PlasmidFinder/log.txt
-	# -o CompGen/output/PlasmidFinder/$output > 
+	mv data.json CompGen/output/PlasmidFinder/${output}_data.json
+	mv tmp $PWD/CompGen/tools/PlasmidFinder
 fi
