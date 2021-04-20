@@ -92,10 +92,10 @@ if $ANIb; then
 	#make tools and output directory for ANIm
 	mkdir -p CompGen/tools/ANIb CompGen/tools/ANIb/extra CompGen/output/ANIb
 	
-	conda create --name pyani_env python=3.8 -y
-	eval "$(conda shell.bash hook)"
-	source ./anaconda3/bin/activate pyani_env
-	conda activate pyani_env
+	 conda create --name pyani_env python=3.8 -y
+	 eval "$(conda shell.bash hook)"
+	 source ./anaconda3/bin/activate pyani_env
+	 conda activate pyani_env
 		
 	#download tools
 	if $tools; then
@@ -111,15 +111,15 @@ if $ANIb; then
 	echo "Calculating average nucleotide identity using ANIm..."
 	average_nucleotide_identity.py -o CompGen/output/ANIb/$output -i $assembled_input -m ANIb -g -f -v
 	
-	# deactivate pyani_env
-	conda deactivate
-	conda env remove -n pyani_env
+	 deactivate pyani_env
+	 conda deactivate
+	 conda env remove -n pyani_env
 
 fi
 
 #running aniM
 if $ANIm; then
-
+	echo "starting ANIm processes"
 	#check if input files exist
 	if [ $ANIm -a -z $assembled_input ];
 	then
@@ -130,18 +130,18 @@ if $ANIm; then
 	#make tools and output directory for ANIm
 	mkdir -p CompGen/tools/ANIm CompGen/tools/ANIm/extra CompGen/output/ANIm
 	
-	conda create --name pyani_env python=3.8 -y
-	eval "$(conda shell.bash hook)"
-	source ./anaconda3/bin/activate pyani_env
-	conda activate pyani_env
-		
+	 conda create --name pyani_env python=3.8 -y
+	 eval "$(conda shell.bash hook)"
+	 source ./anaconda3/bin/activate pyani_env
+	 conda activate pyani_env
+
 	#download tools
 	if $tools; then
 		echo "Installing pyani..."
 		conda install -y biopython
 		conda install -y -c bioconda pyani
 		conda install -y -c bioconda blast-legacy
-		#conda install -c bioconda mummer blast legacy-blast -y
+		conda install -y -c bioconda mummer blast legacy-blast
 		conda install -y -c bioconda/label/cf201901 blast-legacy
 		conda install -y -c biocore blast-legacy
 	fi 
@@ -149,11 +149,11 @@ if $ANIm; then
 
 	#run the ANIm command
 	echo "Calculating average nucleotide identity using ANIm..."
-	average_nucleotide_identity.py -o CompGen/output/ANIm/$output -i $assembled_input -m ANIm -g -f -v
+	average_nucleotide_identity.py -o CompGen/output/ANIm/$output -i $assembled_input -m ANIm -g -f -v --maxmatch
 	
-	# deactivate pyani_env
-	conda deactivate
-	conda env remove -n pyani_env
+	 conda deactivate pyani_env
+	 conda deactivate
+	 conda env remove -n pyani_env
 
 fi
 
@@ -178,15 +178,17 @@ if $stringMLST; then
 	# Install stringMLST
 	if $tools; then
 		echo "Installing stringMLST and its dependencies"
-		conda install -c bioconda stringmlst
+		conda install -c bioconda stringmlst -y
 
 		# Install GrapeTree
 		echo "Installing GrapeTree and its dependencies"
-		pip install grapetree
+		pip install grapetree 
+		conda install pandas -y
+		conda install requests -y
 
 		# Install Toytree
 		echo "Installing Toytree and its dependencies"
-		conda install toytree -c conda-forge
+		conda install toytree -c conda-forge -y
 	fi
 	
 	# run stringMLST
@@ -271,7 +273,7 @@ if $parSNP; then
 
 	# Install Toytree
 		echo "Installing Toytree..."
-		conda install toytree -c conda-forge
+		conda install toytree -c conda-forge -y
 	fi 
 
 	#run parsnp
@@ -431,14 +433,14 @@ if $PlasmidFinder; then
 		exit
 	fi
 	
-	#making the directories 
+	#making the directories
 	mkdir -p CompGen/tools CompGen/tools/PlasmidFinder/extra CompGen/output/PlasmidFinder
 	cd CompGen/PlasmidFinder/tools
 	
-	#installing PlasmidFinder 
-	if $tools; then 
+	#installing PlasmidFinder
+	if $tools; then
 		echo "Installing Plasmidfinder"
-		conda install -c -y bioconda plasmidfinder 
+		conda install -c bioconda plasmidfinder -y
 		download-db.sh
 	fi  
 	
@@ -450,5 +452,6 @@ if $PlasmidFinder; then
     		plasmidfinder.py -i $assembled_input/$file > CompGen/output/PlasmidFinder/$v1 
     	done
 
-	mv json.data CompGen/output/PlasmidFinder/${output}_json.data
+	mv data.json CompGen/output/PlasmidFinder/${output}_data.json
+	mv tmp $PWD/CompGen/tools/PlasmidFinder
 fi
