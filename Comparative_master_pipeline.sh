@@ -333,10 +333,11 @@ if $virulence; then
 	conda install -y -c bioconda blast
 
 	# generate the reference files for genus
-	python ./tools/srst2/database_clustering/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
+
+	python ./tools/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
 	cd-hit -i Campylobacter.fsa -o Campylobacter_cdhit90 -c 0.90 > Campylobacter_cdhit90.stdout 
-	python ./tools/srst2/database_clustering/VFDB_cdhit_to_csv.py --cluster_file Campylobacter_cdhit90.clstr --infile Campylobacter.fsa --outfile Campylobacter_cdhit90.csv
-	python ./tools/srst2/database_clustering/csv_to_gene_db.py -t Campylobacter_cdhit90.csv -o Campylobacter_VF_clustered.fasta -s 5
+	python ./tools/VFDB_cdhit_to_csv.py --cluster_file Campylobacter_cdhit90.clstr --infile Campylobacter.fsa --outfile Campylobacter_cdhit90.csv
+	python ./tools/csv_to_gene_db.py -t Campylobacter_cdhit90.csv -o Campylobacter_VF_clustered.fasta -s 5
 
 	# deactivate and delete the virtual env
 	conda deactivate
