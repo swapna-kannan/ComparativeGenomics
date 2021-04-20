@@ -11,6 +11,9 @@ Further details available at our [class wiki page].
 
 https://compgenomics2021.biosci.gatech.edu/Team_I_Comparative_Genomics#Multi-locus_Sequence_Typing_.28MLST.29
   
+## Usage:
+Comparative_master_pipeline.sh [OPTIONS...] < -o output name > [-t] [-i ASSEMBLED_INPUT_READS_DIRECTORY] [-I RAW_INPUT_READS_DIRECTORY] [-g GFF_FILES_DIRECTORY] [-r PARSNP_REFERENCE_FILE] [-b] [-m] [-M] [-p] [-P] [-V] [-R]
+
 ##### PREREQUISITES:
 -    git
 -    conda 
