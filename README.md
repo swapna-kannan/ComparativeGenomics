@@ -9,7 +9,7 @@ This repository includes a script to run a Comparative Genomics pipeline. <Infor
 This script is to install and run a pipeline which takes assembled or raw fasta sequences and runs them through various tool to gain more insight into the genetic relatedness of the samples. The script can be run with and without tool installations. The script can also run as few as one tool and as many as all of the tools. Further information about the specific outputs are listed below. 
 Further details available at our [class wiki page].
 
-https://github.gatech.edu/comgenomics2021/Team1-ComparativeGenomics
+https://compgenomics2021.biosci.gatech.edu/Team_I_Comparative_Genomics#Multi-locus_Sequence_Typing_.28MLST.29
   
 ##### PREREQUISITES:
 -    git
@@ -56,13 +56,17 @@ Comparative_master_pipeline.sh -t -i <assembled_fasta_input> -m -o <output name>
   
 ## stringMLST
 stringMLST is a rapid k-mer based 7 gene MLST tool for our analyses. This tool can be easily installed and it has an input of raw sequene reads. This tool uses access to the PubMLST databases as a reference. 
-  
+
+For further visualizations you can use: https://github.com/achtman-lab/GrapeTree 
+
 The command used was:
 ```
 Comparative_master_pipeline.sh -t -I <raw input fasta file> -M -o <output name> -s <sample to root tree>
 ```
 ## parSNP
-PARSNP is a core genome SNP analysis tool. It requires reference genome. It identifies maximum unique matches (MUMs) and utilizes compressed suffix graph (CSG) to index the reference genome to identify multi-MUMs. It aligns genomes of any size and it is optimized for microbial genomes. Once the reference is built then other genomes are ran through the CSG. It takes Fasta file as input and output core-genome alignments, variant calls and SNP trees. 
+Evaluates core genome for the single nucleotide polymorphism analysis and requires a reference genome for the analysis. The tool takes assembled or raw genomes and outputs the core genome alignment, variant calls, and a maximum-likelihood tree. This tool requires a reference genome and takes in a fasta file as an input and outputs variant calls and SNP tree.
+
+For further visualizations you can use: https://github.com/achtman-lab/GrapeTree 
 
 The command used was:
   
@@ -72,7 +76,7 @@ Comparative_mater_pipeline.sh -t -i <assembled_fasta_input> -p -o <output name> 
 
 ## Virulence 
 <ADD DESCRIPTION>
-The files for the Virulence database is in the github folder. If you clone this repository, the tools folder has the required information.
+SRST2 was used to pull Campylobacter genes from the VFDB and then Blastn was then used to find the virulence genes. The files for the Virulence database is in the github folder. If you clone this repository, the tools folder has the required information.
   
 The command used was:
 
