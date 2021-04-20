@@ -39,15 +39,15 @@ https://github.gatech.edu/comgenomics2021/Team1-ComparativeGenomics
         Accessory DNA: PlasmidFinder
 
 ## ANIb
-<ADD DESCRIPTION>
-
+ANIb is run on Pyani. This is a Python3 module for calculating ANI and  other relatedness measures (alignment coverage, alignment lengths) for whole genome comparisons and creating summary figures. When running ANIb calculations you are using BLAST for robust analysis.
 
 The command used was:
 ```
 Comparative_master_pipeline.sh -t -i <assembled_fasta_input> -m -o <output name>
 ``` 
 ## ANIm
-<ADD DESCRIPTION>
+ANIm is run on Pyani. This is a Python3 module for calculating ANI and  other relatedness measures (alignment coverage, alignment lengths) for whole genome comparisons and creating summary figures. When running ANIm calcualtions you are using Mummer to calculate for robust analysis.
+
 The command used was:
   
 ```
@@ -55,14 +55,15 @@ Comparative_master_pipeline.sh -t -i <assembled_fasta_input> -m -o <output name>
 ``` 
   
 ## stringMLST
-<ADDDESCRIPTION>
+stringMLST is a rapid k-mer based 7 gene MLST tool for our analyses. This tool can be easily installed and it has an input of raw sequene reads. This tool uses access to the PubMLST databases as a reference. 
   
 The command used was:
 ```
 Comparative_master_pipeline.sh -t -I <raw input fasta file> -M -o <output name> -s <sample to root tree>
 ```
 ## parSNP
-<ADD DESCRIPTION>
+PARSNP is a core genome SNP analysis tool. It requires reference genome. It identifies maximum unique matches (MUMs) and utilizes compressed suffix graph (CSG) to index the reference genome to identify multi-MUMs. It aligns genomes of any size and it is optimized for microbial genomes. Once the reference is built then other genomes are ran through the CSG. It takes Fasta file as input and output core-genome alignments, variant calls and SNP trees. 
+
 The command used was:
   
 ```
@@ -80,13 +81,13 @@ Comparative_master_pipeline.sh -t -i <assembled_fasta_input> -V -o <output name>
 ```
 
 ## Antimicrobial Resistance Genes 
-<ADD DESCRIPTION>
+Taking an annotated GFF file for Antimicrobial Resistance genes, this portion of the script shows you if there is presence of a certain AMR resistance category in a particular isolate. 
 
 ```
 Comparative_master_pipeline.sh -g <GFF PATH> -R -o <output name>
 ``` 
 ## Plasmidfinder 
-<ADD DESCRIPTION> 
+This tool aims to identify and detect plasmid replicons and assign to Incompatibility groups. It takes sequence data (raw assembled) as input. The default parameters: Detection of replicons with 80%+ nucleotide identity, 60%+ coverage. Its outputs are matched sequences and location on sequence. Its advantage over query to blastn: immediate classification of plasmid to existing plasmid lineages.
 
 ```
 Comparative_master_pipeline.sh -t -P -i <assembled_fasta_input> -o <output name> 
