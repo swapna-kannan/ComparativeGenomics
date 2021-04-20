@@ -1,9 +1,9 @@
 # Team 1 Comparative Genomics
 
 #### MEMBERS: 
-Anneke Augenbroe, Davina Campbell, Harini Adepu, Jintian Lyu, Marcus Valancius, Nikesh Kumar, Swapna Kannan
+Harini Adepu, Anneke Augenbroe, Davina Campbell, Swapna Kannan, Nikesh Kumar, Jintian Lyu, Marcus Valancius
 
-This repository includes a script to run a Comparative Genomics pipeline. <Information about what comparative genomics is?>
+This repository includes a script to run a Comparative Genomics pipeline. Comparative Genomics is a field of biological reseaarch whereby various computational tools are used to investiagte and draw conclusions from genomic data. This pipeline will utilize numerous tools which take in *de novo* assembled genomes or raw sequencing reads and perform whole genome, SNP, virulence, and AMR/Accessory DNA level analyses to provide insight into outbreak analysis for bacterial genomes.
 
 **```Comparative_master_pipeline.sh```**
 This script is to install and run a pipeline which takes assembled or raw fasta sequences and runs them through various tool to gain more insight into the genetic relatedness of the samples. The script can be run with and without tool installations. The script can also run as few as one tool and as many as all of the tools. Further information about the specific outputs are listed below. 
