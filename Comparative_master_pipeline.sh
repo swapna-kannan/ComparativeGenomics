@@ -199,7 +199,12 @@ if $stringMLST; then
 	stringMLST.py --buildDB --config $PWD/CompGen/tools/stringMLST/datasets/Campylobacter_jejuni_config.txt -k 35 -P CJ
 	
 	echo "running sequence typing for paired end reads..."
-	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv
+	stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 >> $PWD/CompGen/output/stringMLST/7gMLST_profile_temp.txt
+	awk 'FNR == 1; FNR > 1 && (!/Sample/)' $PWD/CompGen/output/stringMLST/7gMLST_profile_temp.txt >> $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv
+
+	#below are the original stringMLST.py --predict commands. The ones above are to create a growing profile of samples so that old ones do not have to be rerun
+	# echo "running sequence typing for paired end reads..."
+	# stringMLST.py --predict -d $raw_input -p --prefix CJ -k 35 -o $PWD/CompGen/output/stringMLST/7gMLST_${output}.tsv
 	
 	mv $PWD/CJ* $PWD/CompGen/tools/stringMLST/extra/
 	
@@ -221,7 +226,6 @@ import subprocess as sp
 
 with open('$PWD/CompGen/output/stringMLST/7gMLST_${output}.newick', 'r') as fh:
 	newick = fh.read()
-print(newick)
 tre = toytree.tree(newick)
 
 rtre = tre.root(wildcard="${sample}")
@@ -251,10 +255,6 @@ if $parSNP; then
 		exit
 	fi
 
-	if [ $sample -eq $ref_gemome ]; then
-		echo "For the -s flag, please provide a sample that is different from the reference."
-		exit
-	fi
 	# check if input is correct 
 	if [ $parSNP -a -z $assembled_input ]
 	then 
@@ -333,11 +333,10 @@ if $virulence; then
 	conda install -y -c bioconda blast
 
 	# generate the reference files for genus
-
-	python ./tools/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
+	python ./tools/srst2/database_clustering/VFDBgenus.py --infile ./tools/VFs.ffn --genus Campylobacter #need to have tool folder and reference
 	cd-hit -i Campylobacter.fsa -o Campylobacter_cdhit90 -c 0.90 > Campylobacter_cdhit90.stdout 
-	python ./tools/VFDB_cdhit_to_csv.py --cluster_file Campylobacter_cdhit90.clstr --infile Campylobacter.fsa --outfile Campylobacter_cdhit90.csv
-	python ./tools/csv_to_gene_db.py -t Campylobacter_cdhit90.csv -o Campylobacter_VF_clustered.fasta -s 5
+	python ./tools/srst2/database_clustering/VFDB_cdhit_to_csv.py --cluster_file Campylobacter_cdhit90.clstr --infile Campylobacter.fsa --outfile Campylobacter_cdhit90.csv
+	python ./tools/srst2/database_clustering/csv_to_gene_db.py -t Campylobacter_cdhit90.csv -o Campylobacter_VF_clustered.fasta -s 5
 
 	# deactivate and delete the virtual env
 	conda deactivate
